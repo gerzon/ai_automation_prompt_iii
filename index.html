@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARTIFICIAL INTELLIGENCE (AI) PROMPTING FOR AUTOMATION LEVEL III</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Supabase connection settings used to save completed examination results.
+const SUPABASE_URL = "https://oqwehqvhhdvxjxugdukh.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xd2VocXZoaGR2eGp4dWdkdWtoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NTk3MzEsImV4cCI6MjEwMzIzNTczMX0.SidafkMBgTFj9wqqk8nuIYMNbfUpaYVa5WBJUvnYUl4";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+</script>
+
+<style>
+  /* Theme colors and reusable page values. */
+  :root{
+    --sti-blue:#003b7a;
+    --sti-blue-dark:#002b5c;
+    --sti-yellow:#ffc400;
+    --light:#f4f7fb;
+    --text:#1f2937;
+    --border:#d9e1ec;
+    --success:#16803c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:var(--light);
+    color:var(--text);
+    line-height:1.5;
+  }
+  .topbar{height:9px;background:var(--sti-yellow)}
+  header{
+    background:linear-gradient(135deg,var(--sti-blue-dark),var(--sti-blue));
+    color:#fff;padding:28px 20px;
+    box-shadow:0 3px 12px rgba(0,0,0,.15);
+  }
+  .header-inner{max-width:1000px;margin:auto}
+  .header-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .brand{font-weight:800;letter-spacing:.5px;color:var(--sti-yellow);font-size:18px}
+  .dashboard-link{display:inline-block;background:var(--sti-yellow);color:var(--sti-blue-dark);padding:9px 13px;border-radius:7px;font-size:13px;font-weight:700;text-decoration:none}
+  .dashboard-link:hover{filter:brightness(.95)}
+  h1{margin:7px 0 4px;font-size:28px}
+  .subtitle{margin:0;color:#e9f1ff}
+  .container{max-width:1000px;margin:24px auto;padding:0 15px}
+  .card{
+    background:#fff;border:1px solid var(--border);border-radius:12px;
+    padding:22px;margin-bottom:18px;box-shadow:0 3px 12px rgba(0,0,0,.05)
+  }
+  .section-title{
+    background:var(--sti-blue);color:#fff;padding:12px 15px;border-radius:8px;
+    margin:-22px -22px 20px;font-size:18px;font-weight:700;
+    border-bottom:4px solid var(--sti-yellow)
+  }
+  .meta{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px}
+  label{font-weight:700;font-size:14px}
+  input[type=text], input[type=date], textarea{
+    width:100%;margin-top:6px;border:1px solid #bcc8d8;border-radius:7px;
+    padding:11px;font:inherit;background:#fff
+  }
+  .instructions{background:#fff8d9;border-left:5px solid var(--sti-yellow);padding:13px 15px;border-radius:6px}
+  /* Question and answer option styles. */
+  .question{padding:18px 0;border-bottom:1px solid #e6ebf2}
+  .question:last-child{border-bottom:0}
+  .question-modal{
+    display:none;position:fixed;inset:0;z-index:15;overflow-y:auto;
+    padding:28px 15px;background:rgba(0,43,92,.72)
+  }
+  .question-modal.open{display:block}
+  .question-dialog{
+    width:min(700px,100%);min-height:360px;margin:0 auto;background:#fff;
+    border:1px solid var(--border);border-radius:12px;padding:22px;
+    box-shadow:0 12px 35px rgba(0,0,0,.3)
+  }
+  .question-dialog-header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin:-22px -22px 15px;padding:14px 18px;background:var(--sti-blue);
+    color:#fff;border-radius:12px 12px 0 0;border-bottom:4px solid var(--sti-yellow)
+  }
+  .question-progress{font-size:14px;font-weight:700}
+  .question-close{background:#e9eef5;color:#253247;padding:8px 13px;font-size:13px}
+  .question-dialog .question{display:block;border:0;padding:12px 0 20px}
+  .question-dialog .question[hidden]{display:none}
+  .question-navigation{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--border);padding-top:16px}
+  .question-navigation button{background:var(--sti-blue);color:#fff}
+  .question-navigation .previous{background:#e9eef5;color:#253247}
+  .question-launch{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .question-launch p{margin:0;color:#667085}
+  .open-questions{background:var(--sti-blue);color:#fff}
+  .qtext{font-weight:700;margin-bottom:11px}
+  .option{
+    display:block;padding:9px 11px;margin:6px 0;border:1px solid transparent;
+    border-radius:7px;cursor:pointer
+  }
+  .option:hover{background:#eef5ff;border-color:#c7d9f2}
+  .option input{margin-right:9px}
+  /* Form controls and examination actions. */
+  .essay textarea{min-height:150px;resize:vertical}
+  .points{font-size:12px;color:#667085;font-weight:normal}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  button{
+    border:0;border-radius:8px;padding:13px 20px;font-weight:700;cursor:pointer;
+    font-size:15px
+  }
+  .submit{background:var(--sti-blue);color:#fff}
+  .reset{background:#e9eef5;color:#253247}
+  button:hover{opacity:.92}
+  /* Result dialog and answer review styles. */
+  #result{
+    display:none;position:fixed;inset:0;z-index:10;overflow-y:auto;
+    margin:0;padding:28px 15px;background:rgba(0,43,92,.55)
+  }
+  .result-dialog{
+    max-width:1000px;margin:auto;background:#fff;border:1px solid var(--border);
+    border-radius:12px;padding:22px;box-shadow:0 12px 35px rgba(0,0,0,.25)
+  }
+  .result-close{float:right;background:#e9eef5;color:#253247;padding:8px 13px}
+  .score{
+    font-size:30px;font-weight:800;color:var(--sti-blue);margin:5px 0
+  }
+  .success{color:var(--success);font-weight:700}
+  .warning{color:#8a5a00}
+  .review{margin-top:15px}
+  .wrong{background:#fff0f0;border-left:4px solid #c62828;padding:9px;margin:5px 0}
+  .correct{background:#eefaf1;border-left:4px solid var(--success);padding:9px;margin:5px 0}
+  .option.answer-correct{background:#eefaf1;border-color:var(--success)}
+  .option.answer-wrong{background:#fff0f0;border-color:#c62828}
+  /* Loading, welcome, fullscreen, and page-leave overlays. */
+  .loadingScreen{
+    position:fixed;inset:0;z-index:30;display:grid;place-items:center;
+    padding:20px;background:var(--sti-blue-dark);color:#fff
+  }
+  .loading-dialog{text-align:center}
+  .loading-spinner{
+    width:76px;height:76px;margin:0 auto 18px;border:8px solid rgba(255,255,255,.28);
+    border-top-color:var(--sti-yellow);border-radius:50%;animation:spin 1s linear infinite
+  }
+  .loading-dialog p{margin:0;font-weight:700}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #submissionLoading{display:none;z-index:40}
+  #welcomeScreen{
+    position:fixed;inset:0;z-index:20;display:none;place-items:center;
+    padding:20px;background:rgba(0,43,92,.92);color:#fff
+  }
+  #fullscreenScreen{
+    position:fixed;inset:0;z-index:50;display:none;place-items:center;
+    padding:20px;background:rgba(0,43,92,.96);color:#fff
+  }
+  #pageLeaveScreen{
+    position:fixed;inset:0;z-index:60;display:none;place-items:center;
+    padding:20px;background:rgba(0,43,92,.98);color:#fff
+  }
+  .welcome-dialog{
+    width:min(560px,100%);text-align:center;background:#fff;color:var(--text);
+    border-top:7px solid var(--sti-yellow);border-radius:12px;padding:34px 28px;
+    box-shadow:0 12px 35px rgba(0,0,0,.28)
+  }
+  .welcome-dialog h2{margin:0 0 8px;color:var(--sti-blue);font-size:27px}
+  .welcome-dialog p{margin:8px 0 22px}
+  .welcome-dialog button{background:var(--sti-blue);color:#fff}
+  .loading-message{color:#667085;font-size:14px}
+  footer{text-align:center;padding:25px;color:#667085;font-size:13px}
+  /* Responsive layout adjustments for small screens. */
+  @media(max-width:700px){
+    .header-row{align-items:flex-start;flex-direction:column;gap:10px}
+    .meta{grid-template-columns:1fr}
+    h1{font-size:22px}
+    .card{padding:16px}
+    .section-title{margin:-16px -16px 16px}
+  }
+  /* Hide interactive controls when printing results. */
+  @media print{
+    .actions,#result{display:none!important}
+    body{background:#fff}
+    .card{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<!-- Initial loading state while questions are prepared. -->
+<section id="loadingScreen" class="loadingScreen" role="status" aria-live="polite">
+  <div class="loading-dialog">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <p>Loading examination...</p>
+  </div>
+</section>
+<!-- Loading state shown while the examination is being submitted. -->
+<section id="submissionLoading" class="loadingScreen" role="status" aria-live="polite">
+  <div class="loading-dialog">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <p>Submitting your examination...</p>
+  </div>
+</section>
+<!-- Welcome dialog used to start the examination. -->
+<section id="welcomeScreen" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+  <div class="welcome-dialog">
+    <h2 id="welcomeTitle">Welcome to the Examination</h2>
+    <p class="loading-message" id="loadingMessage">Preparing your randomized multiple-choice questions...</p>
+    <button id="startExam" type="button" disabled>Loading...</button>
+  </div>
+</section>
+<!-- Fullscreen warning shown on supported non-iPhone devices. -->
+<section id="fullscreenScreen" role="dialog" aria-modal="true" aria-labelledby="fullscreenTitle">
+  <div class="welcome-dialog">
+    <h2 id="fullscreenTitle">Fullscreen Required</h2>
+    <p class="loading-message">The examination is paused because fullscreen mode was exited. Return to fullscreen to continue.</p>
+    <button id="returnFullscreen" type="button">Return to Fullscreen</button>
+  </div>
+</section>
+<!-- Page-leave warning shown when the active examination loses focus. -->
+<section id="pageLeaveScreen" role="dialog" aria-modal="true" aria-labelledby="pageLeaveTitle">
+  <div class="welcome-dialog">
+    <h2 id="pageLeaveTitle">Examination Paused</h2>
+    <p class="loading-message">You left the examination page or minimized the window. Return to this page and fullscreen mode to continue.</p>
+    <button id="returnPage" type="button">Return to Examination</button>
+  </div>
+</section>
+<!-- Site header and administrator navigation. -->
+<header>
+  <div class="header-inner">
+    <div class="header-row"><div class="brand">STI COLLEGE</div><a class="dashboard-link" href="admin_dashboard.html">Admin Dashboard</a></div>
+    <h1>ARTIFICIAL INTELLIGENCE (AI) PROMPTING FOR AUTOMATION LEVEL III</h1>
+    <p class="subtitle">Pre-Assessment</p>
+  </div>
+</header>
+
+<!-- Main examination content. -->
+<main class="container">
+  <div id="exam-panel">
+    <form id="examForm">
+      <!-- AI Prompting for Automation Level III student information fields. -->
+      <section class="card">
+        <div class="section-title">Student Information</div>
+        <div class="meta">
+          <div><label for="name">Name</label><input id="name" type="text" placeholder="Enter your full name" required></div>
+          <div><label for="section">Section</label><input id="section" type="text" placeholder="Section" value="AI Prompting for Automation Level III" disabled></div>
+          <div><label for="date">Date</label><input id="date" type="date" required></div>
+        </div>
+      </section>
+
+      <!-- AI Prompting for Automation Level III examination instructions and grading scale. -->
+      <section class="card">
+        <div class="section-title">GENERAL INSTRUCTIONS</div>
+        <div class="instructions">
+          Read each question carefully. Choose the letter of the best answer (A, B, C, or D).<br>
+          Write your answers on the answer sheet provided. This is a pre-assessment to determine<br>
+          your current knowledge. Answer to the best of your ability.
+        </div>
+      </section>
+
+      <!-- AI Prompting for Automation Level III question launcher. Individual questions render in the modal below. -->
+      <section class="card">
+        <div class="section-title">MULTIPLE-CHOICE QUESTIONS <span class="points">(30 items × 2 points = 60 points)</span></div>
+        <div class="question-launch">
+          <p>Answer each question in the examination window.</p>
+          <button id="openIctQuestions" class="open-questions" type="button">Open Questions</button>
+        </div>
+      </section>
+
+      <!-- AI Prompting for Automation Level III submission and reset actions. -->
+      <section class="card">
+        <div class="actions">
+          <button id="submitButton" class="submit" type="submit">Submit Examination</button>
+          <button class="reset" type="button" onclick="resetExam()">Reset Answers</button>
+        </div>
+      </section>
+
+    <!-- AI Prompting for Automation Level III one-question-at-a-time modal. -->
+    <section id="ictQuestionModal" class="question-modal" role="dialog" aria-modal="true" aria-labelledby="ictQuestionModalTitle">
+      <div class="question-dialog">
+        <div class="question-dialog-header">
+          <strong id="ictQuestionModalTitle">AI Prompting for Automation Level III Question</strong>
+          <span id="ictQuestionProgress" class="question-progress"></span>
+          <button class="question-close" type="button" data-close-question-modal="ictQuestionModal">Back to Exam</button>
+        </div>
+        <div id="mcqContainer"></div>
+        <div class="question-navigation">
+          <button id="ictPreviousQuestion" class="previous" type="button">Previous</button>
+          <button id="ictNextQuestion" type="button">Next</button>
+        </div>
+      </div>
+    </section>
+    </form>
+
+    <!-- AI Prompting for Automation Level III score and answer review dialog. -->
+    <section id="result" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div class="result-dialog">
+        <button class="result-close" type="button" onclick="closeResult()" aria-label="Close examination result">Close</button>
+        <div id="resultTitle" class="section-title">Examination Result</div>
+        <div id="resultText"></div>
+        <div id="review" class="review"></div>
+      </div>
+    </section>
+  </div>
+
+
+</main>
+
+<!-- Site footer. -->
+<footer>ARTIFICIAL INTELLIGENCE (AI) PROMPTING FOR AUTOMATION LEVEL III</footer>
+
+<script>
+// AI prompting and automation pre-assessment question bank.
+const questions = [
+  [
+    "What is Artificial Intelligence (AI)?",
+    [
+      "A type of computer hardware used only for gaming",
+      "Technology that enables machines to perform tasks that normally require human intelligence",
+      "A programming language used to create websites",
+      "A device that stores files"
+    ],
+    "B"
+  ],
+  [
+    "What is Generative AI primarily designed to do?",
+    [
+      "Generate new content such as text, images, audio, or code",
+      "Repair damaged computer hardware",
+      "Replace all computer networks",
+      "Store information without processing it"
+    ],
+    "A"
+  ],
+  [
+    "Which of the following is an example of a Generative AI tool?",
+    [
+      "Calculator",
+      "File Explorer",
+      "ChatGPT",
+      "Disk Cleanup"
+    ],
+    "C"
+  ],
+  [
+    "What is a prompt in the context of Generative AI?",
+    [
+      "A computer virus",
+      "An instruction or input given to an AI system",
+      "A type of computer monitor",
+      "A folder used to store documents"
+    ],
+    "B"
+  ],
+  [
+    "Which prompt is most likely to produce a useful response?",
+    [
+      "\"Tell me something.\"",
+      "\"Do this.\"",
+      "\"Explain.\"",
+      "\"Write a 150-word beginner-friendly explanation of how solar panels generate electricity.\""
+    ],
+    "D"
+  ],
+  [
+    "Why should a prompt include clear instructions and context?",
+    [
+      "To make the AI system run without electricity",
+      "To help the AI understand the task and produce a more relevant response",
+      "To prevent the user from editing the response",
+      "To guarantee that every response is correct"
+    ],
+    "B"
+  ],
+  [
+    "What does the term \"prompt engineering\" generally refer to?",
+    [
+      "Designing and refining instructions to guide an AI system's output",
+      "Building a physical computer processor",
+      "Installing an operating system",
+      "Repairing a network cable"
+    ],
+    "A"
+  ],
+  [
+    "Which prompt element tells the AI what kind of role or perspective to use?",
+    [
+      "Role",
+      "File extension",
+      "Password",
+      "Screen resolution"
+    ],
+    "A"
+  ],
+  [
+    "A user asks an AI tool to \"Act as a customer service representative.\" Which prompting technique is being used?",
+    [
+      "Role prompting",
+      "Random prompting",
+      "Image compression",
+      "Data deletion"
+    ],
+    "A"
+  ],
+  [
+    "What is the purpose of providing examples in a prompt?",
+    [
+      "To make the prompt longer without adding meaning",
+      "To show the AI the expected format or pattern of the output",
+      "To disable the AI's language capabilities",
+      "To prevent the AI from following instructions"
+    ],
+    "B"
+  ],
+  [
+    "What should a user do when an AI-generated answer contains information that may be inaccurate?",
+    [
+      "Accept it immediately",
+      "Share it without checking",
+      "Verify the information using reliable sources",
+      "Assume the AI is always correct"
+    ],
+    "C"
+  ],
+  [
+    "What is an AI hallucination?",
+    [
+      "An AI-generated response that presents false or unsupported information as if it were true",
+      "A computer screen that displays too brightly",
+      "A file that cannot be opened",
+      "A network connection problem"
+    ],
+    "A"
+  ],
+  [
+    "Which information should generally NOT be entered into a public AI tool unless appropriate safeguards and authorization are in place?",
+    [
+      "A fictional character's name",
+      "A general question about mathematics",
+      "A person's password and confidential personal information",
+      "A request for a sample poem"
+    ],
+    "C"
+  ],
+  [
+    "Why is human review important when using AI-generated content?",
+    [
+      "AI tools cannot produce any useful content",
+      "A person can check accuracy, relevance, safety, and appropriateness",
+      "It makes the AI tool work without an internet connection",
+      "It removes the need to understand the task"
+    ],
+    "B"
+  ],
+  [
+    "Which is an example of a responsible use of Generative AI in education?",
+    [
+      "Submitting AI-generated work as one's own when this is prohibited",
+      "Using AI to explain a difficult topic, then checking and learning from the explanation",
+      "Asking AI to invent sources for a research paper",
+      "Sharing classmates' private information with an AI tool"
+    ],
+    "B"
+  ],
+  [
+    "What is automation?",
+    [
+      "Using technology to perform tasks with reduced manual intervention",
+      "Turning off all computer programs",
+      "Replacing every employee in an organization",
+      "Manually repeating the same task every day"
+    ],
+    "A"
+  ],
+  [
+    "Which task is a good candidate for basic automation?",
+    [
+      "Making a personal judgment about someone's character",
+      "Automatically sending a confirmation email after a form is submitted",
+      "Deciding whether a student deserves respect",
+      "Having a face-to-face conversation that requires empathy"
+    ],
+    "B"
+  ],
+  [
+    "In a basic automated workflow, what is a trigger?",
+    [
+      "An event that starts the workflow",
+      "The final report produced by the workflow",
+      "A computer's power cable",
+      "A user's display setting"
+    ],
+    "A"
+  ],
+  [
+    "In an automated workflow, what is an action?",
+    [
+      "An event that has not happened",
+      "A task performed after a trigger or condition is met",
+      "A type of computer virus",
+      "A manual backup of the keyboard"
+    ],
+    "B"
+  ],
+  [
+    "Which sequence best describes a simple automated process?",
+    [
+      "Action \u2192 Trigger \u2192 Ignore result",
+      "Trigger \u2192 Action \u2192 Result",
+      "Result \u2192 Delete \u2192 Trigger",
+      "Shutdown \u2192 Restart \u2192 Uninstall"
+    ],
+    "B"
+  ],
+  [
+    "A business receives an online order. Which automation could help the business?",
+    [
+      "Automatically send an order confirmation to the customer",
+      "Delete all customer orders",
+      "Turn off the business internet connection",
+      "Print unrelated documents"
+    ],
+    "A"
+  ],
+  [
+    "What is the main purpose of integrating an AI tool into an automation workflow?",
+    [
+      "To add AI capabilities, such as classifying text or drafting responses, to a process",
+      "To make every workflow unpredictable",
+      "To remove all security controls",
+      "To prevent systems from exchanging information"
+    ],
+    "A"
+  ],
+  [
+    "Which of the following is an example of AI-assisted text classification?",
+    [
+      "Sorting customer messages into categories such as inquiry, complaint, and feedback",
+      "Changing the color of a computer mouse",
+      "Increasing monitor brightness",
+      "Renaming a keyboard"
+    ],
+    "A"
+  ],
+  [
+    "Why should an automated workflow be tested before it is used in actual operations?",
+    [
+      "To confirm that triggers, actions, and results work as expected",
+      "To make the workflow more complicated",
+      "To avoid documenting the process",
+      "To ensure that errors are never reported"
+    ],
+    "A"
+  ],
+  [
+    "What is a common risk of poorly configured automation?",
+    [
+      "It may repeat an incorrect action or send incorrect information",
+      "It always improves data quality",
+      "It eliminates every possible human error",
+      "It automatically follows every law and policy"
+    ],
+    "A"
+  ],
+  [
+    "What should be considered when selecting a task for automation?",
+    [
+      "Whether the task is repetitive, rule-based, and suitable for automation",
+      "Whether the task is difficult to explain to anyone",
+      "Whether the task requires sensitive judgment in every case",
+      "Whether the task has no clear objective"
+    ],
+    "A"
+  ],
+  [
+    "What is an API commonly used for?",
+    [
+      "Allowing different software applications or services to communicate",
+      "Cleaning a computer keyboard",
+      "Increasing a laptop's screen size",
+      "Replacing a computer's operating system"
+    ],
+    "A"
+  ],
+  [
+    "What is the purpose of a condition in an automated workflow?",
+    [
+      "To determine whether a workflow should follow a particular path based on a rule",
+      "To make the computer shut down immediately",
+      "To delete every input automatically",
+      "To prevent the workflow from starting"
+    ],
+    "A"
+  ],
+  [
+    "A small business wants to use AI to draft replies to customer inquiries. What is the best practice?",
+    [
+      "Send every AI-generated reply without review",
+      "Provide clear instructions, protect customer data, and review replies before sending when needed",
+      "Give the AI access to every company password",
+      "Allow the AI to invent prices and company policies"
+    ],
+    "B"
+  ],
+  [
+    "Which statement best describes the relationship between AI and automation?",
+    [
+      "AI and automation always mean exactly the same thing",
+      "Automation can follow predefined rules, while AI can add capabilities such as understanding or generating content",
+      "Automation cannot be used in businesses",
+      "AI can only be used for entertainment"
+    ],
+    "B"
+  ]
+];
+
+// Escape question text before inserting it into the page.
+function escapeHTML(value){
+  return String(value).replace(/[&<>"']/g,character=>(
+    {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[character])
+  );
+}
+
+// Identify the broad device category without collecting a unique device fingerprint.
+function detectDevice(){
+  const userAgent=navigator.userAgent||"";
+  if(/iPhone/i.test(userAgent)) return "iPhone";
+  if(/iPad/i.test(userAgent)||(/Macintosh/i.test(userAgent)&&navigator.maxTouchPoints>1)) return "iPad";
+  if(/Android/i.test(userAgent)) return "Android";
+  if(/Windows/i.test(userAgent)) return "Windows";
+  if(/Macintosh|Mac OS X/i.test(userAgent)) return "Mac";
+  if(/Linux/i.test(userAgent)) return "Linux";
+  return "Unknown";
+}
+
+const device=detectDevice();
+
+// Save a completed examination and return a user-facing status message.
+async function saveExamSubmission(submission){
+  if(SUPABASE_KEY==="******"){
+    const message="The examination was graded, but it was not saved because the Supabase anon key is not configured.";
+    console.error(message);
+    return message;
+  }
+  try{
+    const { error }=await supabaseClient
+      .from("exam_submissions")
+      .insert(submission);
+    if(error){
+      console.error("Could not save exam result:",error);
+      return `The examination was graded, but it could not be saved (${error.message}).`;
+    }
+    return "";
+  }catch(error){
+    console.error("Could not save exam result:",error);
+    return "The examination was graded, but it could not be saved because the database request failed.";
+  }
+}
+
+// Render AI Prompting for Automation Level III questions and their answer choices.
+function renderMCQ(){
+  const c=document.getElementById("mcqContainer");
+  c.innerHTML=questions.map((q,i)=>{
+    const n=i+1;
+    return `<div class="question" data-question-index="${i}"${i===0?"":" hidden"}>
+      <div class="qtext">${n}. ${escapeHTML(q[0])}</div>
+      ${q[1].map((opt,j)=>{
+        const letter=String.fromCharCode(65+j);
+        return `<label class="option"><input type="radio" name="q${n}" value="${letter}"${j===0?" required":""}> <strong>${letter}.</strong> ${escapeHTML(opt)}</label>`;
+      }).join("")}
+    </div>`;
+  }).join("");
+}
+// Randomize the AI Prompting for Automation Level III question order for each examination session.
+function shuffleQuestions(){
+  for(let i=questions.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [questions[i],questions[j]]=[questions[j],questions[i]];
+  }
+}
+// Track the active question and controls for each subject modal.
+const questionModalState={
+  ict:{modalId:"ictQuestionModal",containerId:"mcqContainer",progressId:"ictQuestionProgress",previousId:"ictPreviousQuestion",nextId:"ictNextQuestion",openId:"openIctQuestions",total:()=>questions.length,index:0}
+};
+// Display the current question and update navigation controls.
+function updateQuestionModal(subject){
+  const state=questionModalState[subject];
+  const container=document.getElementById(state.containerId);
+  const questionElements=container.querySelectorAll(".question");
+  questionElements.forEach((question,index)=>{question.hidden=index!==state.index;});
+  document.getElementById(state.progressId).textContent=`Question ${state.index+1} of ${state.total()}`;
+  document.getElementById(state.previousId).disabled=state.index===0;
+  document.getElementById(state.nextId).textContent=state.index===state.total()-1?"Finish Questions":"Next";
+  const currentQuestion=questionElements[state.index];
+  if(currentQuestion){
+    const firstInput=currentQuestion.querySelector("input");
+    if(firstInput) firstInput.focus();
+  }
+}
+// Open a subject's question modal.
+function openQuestionModal(subject){
+  const state=questionModalState[subject];
+  document.getElementById(state.modalId).classList.add("open");
+  document.body.style.overflow="hidden";
+  updateQuestionModal(subject);
+}
+// Close a subject's question modal and restore focus to its launcher.
+function closeQuestionModal(subject){
+  const state=questionModalState[subject];
+  document.getElementById(state.modalId).classList.remove("open");
+  document.body.style.overflow="";
+  document.getElementById(state.openId).focus();
+}
+// Move forward or backward through questions after validating forward navigation.
+function moveQuestion(subject,direction){
+  const state=questionModalState[subject];
+  const currentName=`q${state.index+1}`;
+  if(direction>0&&!document.querySelector(`input[name="${currentName}"]:checked`)){
+    alert("Please select an answer before continuing.");
+    return;
+  }
+  const nextIndex=state.index+direction;
+  if(nextIndex<0||nextIndex>=state.total()){
+    closeQuestionModal(subject);
+    return;
+  }
+  state.index=nextIndex;
+  updateQuestionModal(subject);
+}
+Object.entries(questionModalState).forEach(([subject,state])=>{
+  document.getElementById(state.openId).addEventListener("click",()=>openQuestionModal(subject));
+  document.getElementById(state.previousId).addEventListener("click",()=>moveQuestion(subject,-1));
+  document.getElementById(state.nextId).addEventListener("click",()=>moveQuestion(subject,1));
+});
+document.querySelectorAll("[data-close-question-modal]").forEach(button=>{
+  button.addEventListener("click",()=>closeQuestionModal("ict"));
+});
+// Grade the AI Prompting for Automation Level III examination and save the result to Supabase.
+async function grade(){
+  document.getElementById("submissionLoading").style.display="grid";
+  document.body.style.overflow="hidden";
+  let correct=0, answered=0, review=[];
+  questions.forEach((q,i)=>{
+    const selected=document.querySelector(`input[name="q${i+1}"]:checked`);
+    document.querySelectorAll(`input[name="q${i+1}"]`).forEach(input=>{
+      const option=input.closest(".option");
+      option.classList.toggle("answer-correct",input.value===q[2]);
+      option.classList.toggle("answer-wrong",Boolean(selected)&&input===selected&&input.value!==q[2]);
+    });
+    if(selected){
+      answered++;
+      if(selected.value===q[2]) correct++;
+      else review.push({n:i+1,selected:selected.value,correct:q[2]});
+    }
+  });
+  const points=correct*2;
+  const saveMessage=await saveExamSubmission({
+    student_name: document.getElementById("name").value.trim(),
+    section: document.getElementById("section").value.trim(),
+    exam_date: document.getElementById("date").value,
+    mcq_score: points,
+    essay_answered: 0,
+    device
+  });
+if (!saveMessage) {
+  const submitButton=document.getElementById("submitButton");
+  submitButton.type="button";
+  submitButton.textContent="Retake Examination";
+  submitButton.onclick=retakeExam;
+}
+  document.getElementById("submissionLoading").style.display="none";
+  document.getElementById("result").style.display="block";
+  document.getElementById("resultText").innerHTML=
+    `<div class="score">${points} / ${questions.length*2}</div>
+     <p><strong>Multiple-choice:</strong> ${correct} correct out of ${questions.length}. ${answered} item(s) answered.</p>
+     <p class="success">Your score is based on ${questions.length} multiple-choice items worth 2 points each.</p>
+     ${saveMessage?`<p class="warning"><strong>Save status:</strong> ${saveMessage}</p>`:"<p class=\"success\"><strong>Save status:</strong> Result saved successfully.</p>"}`;
+  document.getElementById("review").innerHTML = review.length
+    ? `<h3>Items to Review</h3>${review.map(x=>`<div class="wrong">Item ${x.n}: your answer <strong>${x.selected}</strong> • correct answer <strong>${x.correct}</strong></div>`).join("")}`
+    : `<div class="correct">Excellent! All answered items are correct.</div>`;
+  document.querySelector(".result-close").focus();
+}
+// Connect form submissions to their grading functions.
+document.getElementById("examForm").addEventListener("submit",e=>{e.preventDefault();grade();});
+// Close a result dialog.
+function closeResult(targetId="result"){
+  document.getElementById(targetId).style.display="none";
+  document.body.style.overflow="";
+}
+// Reset AI Prompting for Automation Level III answers and question position.
+function resetExam(){
+  if(confirm("Reset all answers?")){
+    document.getElementById("examForm").reset();
+    questionModalState.ict.index=0;
+    closeResult();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+}
+// Reload the page for a new examination attempt.
+function retakeExam(){
+  window.location.reload();
+}
+// Prepare question data and reveal the welcome dialog.
+function prepareExam(){
+  shuffleQuestions();
+  renderMCQ();
+  document.getElementById("date").valueAsDate=new Date();
+  document.getElementById("loadingMessage").textContent="Your questions are ready. Good luck!";
+  const startButton=document.getElementById("startExam");
+  startButton.disabled=false;
+  startButton.textContent="Start Examination";
+  setTimeout(()=>{
+    document.getElementById("loadingScreen").style.display="none";
+    document.getElementById("welcomeScreen").style.display="grid";
+    startButton.focus();
+  },800);
+}
+// Request fullscreen where the device supports and requires it.
+async function enterFullscreen(){
+  if(isIPhone()){
+    return;
+  }
+  if(!document.fullscreenElement){
+    await document.documentElement.requestFullscreen();
+  }
+}
+// iPhone browsers commonly do not support the required fullscreen API.
+function isIPhone(){
+  return /iPhone|iPod/i.test(navigator.userAgent);
+}
+let examStarted=false;
+let pageLeaveRefreshStarted=false;
+// Restart the page after the user leaves the examination.
+function refreshAfterPageLeave(){
+  if(examStarted&&!pageLeaveRefreshStarted){
+    pageLeaveRefreshStarted=true;
+    window.location.reload();
+  }
+}
+// Pause the interface when the examination page loses focus.
+function pauseForPageLeave(){
+  if(examStarted&&(document.hidden||!document.hasFocus())){
+    document.getElementById("pageLeaveScreen").style.display="grid";
+    document.body.style.overflow="hidden";
+  }
+}
+// Resume the interface after the user returns to the examination.
+function resumeAfterPageReturn(){
+  if(examStarted&&document.visibilityState==="visible"&&document.hasFocus()&&(isIPhone()||document.fullscreenElement)){
+    document.getElementById("pageLeaveScreen").style.display="none";
+    document.body.style.overflow="";
+  }
+}
+// Start the examination after fullscreen requirements are satisfied.
+async function startExam(){
+  try{
+    await enterFullscreen();
+  }catch(error){
+    console.error("Fullscreen is required to start the examination:",error);
+    document.getElementById("loadingMessage").textContent="Fullscreen permission is required to start the examination.";
+    return;
+  }
+  document.getElementById("welcomeScreen").style.display="none";
+  document.getElementById("fullscreenScreen").style.display="none";
+  document.body.style.overflow="";
+  examStarted=true;
+  document.getElementById("name").focus();
+}
+// Register start, fullscreen, focus, and visibility event handlers.
+document.getElementById("startExam").addEventListener("click",startExam);
+document.getElementById("returnFullscreen").addEventListener("click",startExam);
+document.getElementById("returnPage").addEventListener("click",startExam);
+document.addEventListener("contextmenu",event=>event.preventDefault());
+document.addEventListener("fullscreenchange",()=>{
+  if(examStarted&&!isIPhone()&&!document.fullscreenElement){
+    document.getElementById("fullscreenScreen").style.display="grid";
+    document.body.style.overflow="hidden";
+    document.getElementById("returnFullscreen").focus();
+  }
+  resumeAfterPageReturn();
+});
+document.addEventListener("visibilitychange",pauseForPageLeave);
+window.addEventListener("blur",pauseForPageLeave);
+window.addEventListener("focus",resumeAfterPageReturn);
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden) refreshAfterPageLeave();
+});
+window.addEventListener("blur",refreshAfterPageLeave);
+document.body.style.overflow="hidden";
+window.addEventListener("load",prepareExam,{once:true});
+</script>
+</body>
+</html>
